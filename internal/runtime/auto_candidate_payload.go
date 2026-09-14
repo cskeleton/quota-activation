@@ -12,7 +12,7 @@ import (
 )
 
 // keepTrueAutoPayload 决定是否采用 runtime/file 真源。Codex 的 5h / 无法 Evaluate 视为缺失。
-func keepTrueAutoPayload(provider detector.Provider, payload []byte, observedAt time.Time) bool {
+func keepTrueAutoPayload(provider detector.Provider, payload []byte, observedAt time.Time, enable5hWindow bool) bool {
 	if provider != detector.ProviderCodex {
 		return true
 	}
@@ -21,9 +21,13 @@ func keepTrueAutoPayload(provider detector.Provider, payload []byte, observedAt 
 		Provider:   detector.ProviderCodex,
 		ObservedAt: observedAt,
 		Payload:    payload,
+		Enable5hWindow: enable5hWindow,
 	}, "")
 	if err != nil {
 		return false
+	}
+	if enable5hWindow {
+		return true
 	}
 	return decision.Observation.Window != detector.WindowFiveHour
 }

@@ -12,7 +12,7 @@ import (
 
 // AntigravityActivationURL 是 Antigravity 官方 generateContent 唤醒端点。
 // 与 Codex chatgpt.com/backend-api/codex/responses 完全独立，禁止混用。
-const AntigravityActivationURL = "https://daily-cloudcode-pa.googleapis.com/v1internal:generateContent"
+const AntigravityActivationURL = "https://cloudcode-pa.googleapis.com/v1internal:generateContent"
 
 const (
 	antigravityUserAgent   = "antigravity"

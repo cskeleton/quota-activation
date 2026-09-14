@@ -76,8 +76,7 @@ func isUsableSuccessRecord(rec Record) bool {
 	if rec.Window == "" || rec.ResetAt.IsZero() {
 		return false
 	}
-	if strings.EqualFold(rec.Provider, "codex") && isFiveHourWindow(rec.Window) {
-		return false
-	}
+	// allow 5h records in merge
+	// if strings.EqualFold(rec.Provider, "codex") && isFiveHourWindow(rec.Window) { return false }
 	return true
 }

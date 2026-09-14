@@ -33,7 +33,7 @@ type antigravityBucket struct {
 	ResetTime any    `json:"resetTime"`
 }
 
-func parseAntigravity(payload []byte, model string) (parsedCycle, error) {
+func parseAntigravity(payload []byte, model string, enable5hWindow bool) (parsedCycle, error) {
 	modelGroup, ok := inferModelGroup(model)
 	if !ok {
 		return parsedCycle{}, fmt.Errorf("antigravity model group: %w", ErrUnknownQuota)
@@ -42,19 +42,19 @@ func parseAntigravity(payload []byte, model string) (parsedCycle, error) {
 	if err := decodePayload(payload, &quota); err != nil {
 		return parsedCycle{}, err
 	}
-	if cycle, ok := parseAntigravityModels(quota.Models, modelGroup); ok {
+	if cycle, ok := parseAntigravityModels(quota.Models, modelGroup, enable5hWindow); ok {
 		return cycle, nil
 	}
-	if cycle, ok := parseAntigravityBuckets(quota.Buckets, modelGroup); ok {
+	if cycle, ok := parseAntigravityBuckets(quota.Buckets, modelGroup, enable5hWindow); ok {
 		return cycle, nil
 	}
-	if cycle, ok := parseAntigravityGroups(quota.Groups, modelGroup); ok {
+	if cycle, ok := parseAntigravityGroups(quota.Groups, modelGroup, enable5hWindow); ok {
 		return cycle, nil
 	}
 	return parsedCycle{}, fmt.Errorf("antigravity reset_at: %w", ErrUnknownQuota)
 }
 
-func parseAntigravityModels(models map[string]antigravityModel, group ModelGroup) (parsedCycle, bool) {
+func parseAntigravityModels(models map[string]antigravityModel, group ModelGroup, enable5hWindow bool) (parsedCycle, bool) {
 	for modelID, item := range models {
 		if !belongsToModelGroup(modelID+" "+item.ModelProvider, group) {
 			continue
@@ -63,14 +63,14 @@ func parseAntigravityModels(models map[string]antigravityModel, group ModelGroup
 		if len(windows) == 0 {
 			windows = []quotaWindow{{ResetTime: item.QuotaInfo.ResetTime}}
 		}
-		if cycle, ok := firstAntigravityWindow(windows, group); ok {
+		if cycle, ok := firstAntigravityWindow(windows, group, enable5hWindow); ok {
 			return cycle, true
 		}
 	}
 	return parsedCycle{}, false
 }
 
-func parseAntigravityBuckets(buckets []antigravityBucket, group ModelGroup) (parsedCycle, bool) {
+func parseAntigravityBuckets(buckets []antigravityBucket, group ModelGroup, enable5hWindow bool) (parsedCycle, bool) {
 	for _, bucket := range buckets {
 		if !belongsToModelGroup(bucket.ModelID, group) {
 			continue
@@ -83,26 +83,26 @@ func parseAntigravityBuckets(buckets []antigravityBucket, group ModelGroup) (par
 	return parsedCycle{}, false
 }
 
-func parseAntigravityGroups(groups []antigravityGroup, modelGroup ModelGroup) (parsedCycle, bool) {
+func parseAntigravityGroups(groups []antigravityGroup, modelGroup ModelGroup, enable5hWindow bool) (parsedCycle, bool) {
 	for _, group := range groups {
 		if !belongsToModelGroup(group.DisplayName+" "+group.Description, modelGroup) {
 			continue
 		}
-		if cycle, ok := parseAntigravityBuckets(group.Buckets, modelGroup); ok {
+		if cycle, ok := parseAntigravityBuckets(group.Buckets, modelGroup, enable5hWindow); ok {
 			return cycle, true
 		}
 	}
 	return parsedCycle{}, false
 }
 
-	func firstAntigravityWindow(windows []quotaWindow, group ModelGroup) (parsedCycle, bool) {
-		// previous 由调用方传入；探测路径尚无 PreviousWindow，先按未知处理。
-		return selectAntigravityWindow(windows, group, WindowUnknown)
-	}
+	func firstAntigravityWindow(windows []quotaWindow, group ModelGroup, enable5hWindow bool) (parsedCycle, bool) {
+	return selectAntigravityWindow(windows, group, WindowUnknown, enable5hWindow)
+}
+
 
 	// selectAntigravityWindow 以真源窗口集合为唯一真相。
 	// 存在比 previous 更长的窗时选更长（修污染 5h）；否则 previous 同名且不被支配时保持稳定。
-	func selectAntigravityWindow(windows []quotaWindow, group ModelGroup, previousWindow Window) (parsedCycle, bool) {
+	func selectAntigravityWindow(windows []quotaWindow, group ModelGroup, previousWindow Window, enable5hWindow bool) (parsedCycle, bool) {
 		var longest parsedCycle
 		longestRank := -1
 		var matchedPrevious parsedCycle
@@ -112,7 +112,7 @@ func parseAntigravityGroups(groups []antigravityGroup, modelGroup ModelGroup) (p
 			if !ok {
 				continue
 			}
-			rank := windowPreference(cycle.window)
+			rank := windowPreference(cycle.window, enable5hWindow)
 			if rank > longestRank {
 				longest = cycle
 				longestRank = rank
@@ -126,7 +126,7 @@ func parseAntigravityGroups(groups []antigravityGroup, modelGroup ModelGroup) (p
 			return parsedCycle{}, false
 		}
 		// 真源有更长窗（weekly/monthly vs 5h）→ 选更长，禁止被污染 previous 锁死。
-		if longestRank > windowPreference(previousWindow) {
+		if longestRank > windowPreference(previousWindow, enable5hWindow) {
 			return longest, true
 		}
 		if hasMatchedPrevious {

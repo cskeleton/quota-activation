@@ -75,6 +75,7 @@ type ProbeInput struct {
 	Model      string
 	ObservedAt time.Time
 	Payload    []byte
+	Enable5hWindow bool
 }
 
 // ProbeObservation 是从 quota payload 中解析出的脱敏周期证据。

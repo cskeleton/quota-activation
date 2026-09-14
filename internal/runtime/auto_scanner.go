@@ -367,6 +367,7 @@ func (s autoScanSnapshot) activateCandidateDetail(ctx context.Context, candidate
 	decision, err := detector.EvaluateWithPrevious(detector.ProbeInput{
 		AuthID: candidate.authID, Provider: candidate.provider, Model: candidate.model,
 		ObservedAt: observedAt, Payload: candidate.payload,
+		Enable5hWindow: s.config.Enable5hWindow,
 	}, previous)
 	if err != nil {
 		msg := localizeHistoryMessage(err.Error())

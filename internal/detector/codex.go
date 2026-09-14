@@ -25,7 +25,7 @@ type codexRateLimit struct {
 	SecondaryWindow quotaWindow `json:"secondary_window"`
 }
 
-func parseCodex(payload []byte, observedAt time.Time) (parsedCycle, error) {
+func parseCodex(payload []byte, observedAt time.Time, enable5hWindow bool) (parsedCycle, error) {
 	var quota codexQuota
 	if err := decodePayload(payload, &quota); err != nil {
 		return parsedCycle{}, err
@@ -56,10 +56,10 @@ func parseCodex(payload []byte, observedAt time.Time) (parsedCycle, error) {
 			continue
 		}
 		cycleWindow := classifyWindow(window)
-		if cycleWindow == WindowUnknown || cycleWindow == WindowFiveHour {
+		if cycleWindow == WindowUnknown || (!enable5hWindow && cycleWindow == WindowFiveHour) {
 			continue
 		}
-		rank := windowPreference(cycleWindow)
+		rank := windowPreference(cycleWindow, enable5hWindow)
 		if rank > bestRank {
 			remaining, hasRemaining := extractRemaining(window)
 			best = parsedCycle{

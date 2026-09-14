@@ -49,21 +49,21 @@ func (s autoScanSnapshot) autoCandidate(file host.AuthFile, runtimeAuth autoRunt
 	if !ok {
 		return autoCandidate{}, false
 	}
-	payload, ok := autoCandidatePayload(file, document, runtimeAuth, provider, model, authID, s.store, s.now().UTC(), s.host)
+	payload, ok := autoCandidatePayload(file, document, runtimeAuth, provider, model, authID, s.store, s.now().UTC(), s.host, s.config.Enable5hWindow)
 	if !ok {
 		return autoCandidate{}, false
 	}
 	return autoCandidate{authID: authID, provider: provider, model: model, disabled: disabled, payload: payload}, true
 }
 
-func autoCandidatePayload(file host.AuthFile, document autoAuthFileDocument, runtimeAuth autoRuntimeAuthFile, provider detector.Provider, model string, authID string, store *state.Store, observedAt time.Time, hostClient host.Client) ([]byte, bool) {
+func autoCandidatePayload(file host.AuthFile, document autoAuthFileDocument, runtimeAuth autoRuntimeAuthFile, provider detector.Provider, model string, authID string, store *state.Store, observedAt time.Time, hostClient host.Client, enable5hWindow bool) ([]byte, bool) {
 	if runtimeAuth.ok {
 		runtimeDocument := decodeAutoAuthFile(runtimeAuth.file)
-		if payload, ok := autoQuotaPayload(runtimeAuth.file, runtimeDocument); ok && keepTrueAutoPayload(provider, payload, observedAt) {
+		if payload, ok := autoQuotaPayload(runtimeAuth.file, runtimeDocument); ok && keepTrueAutoPayload(provider, payload, observedAt, enable5hWindow) {
 			return payload, true
 		}
 	}
-	if payload, ok := autoQuotaPayload(file, document); ok && keepTrueAutoPayload(provider, payload, observedAt) {
+	if payload, ok := autoQuotaPayload(file, document); ok && keepTrueAutoPayload(provider, payload, observedAt, enable5hWindow) {
 		return payload, true
 	}
 	if store != nil {
@@ -81,6 +81,9 @@ func autoCandidatePayload(file host.AuthFile, document autoAuthFileDocument, run
 		if payload, ok := syntheticCodexPlanPayload(file, model, observedAt, hostClient); ok {
 			return payload, true
 		}
+	}
+	if enable5hWindow && provider == detector.ProviderCodex {
+		return marshalAutoQuotaPayload(provider, model, "5h", 5*60*60, quotapayload.StableResetAt(observedAt, 5*time.Hour))
 	}
 	return syntheticAutoQuotaPayload(provider, model, observedAt)
 }

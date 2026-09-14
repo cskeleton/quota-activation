@@ -28,7 +28,19 @@ func classifyWindow(window quotaWindow) Window {
 }
 
 // windowPreference 用于多窗口时优先长周期（自动唤醒不关心 5h）。
-func windowPreference(window Window) int {
+func windowPreference(window Window, enable5hWindow bool) int {
+	if enable5hWindow {
+		switch window {
+		case WindowFiveHour:
+			return 4
+		case WindowMonthly:
+			return 3
+		case WindowWeekly:
+			return 2
+		default:
+			return 0
+		}
+	}
 	switch window {
 	case WindowMonthly:
 		return 3

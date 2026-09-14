@@ -124,7 +124,7 @@ func (s *Store) LatestSuccess(authID string, provider string) (Record, bool) {
 // 选择规则与 LatestSuccess 相同：LastResult=success、非空 Window、非零 ResetAt，按 ObservedAt 再 ResetAt 取最新。
 // Codex 会跳过规范化后等于 5h 的窗口；Antigravity 及其它 provider 保持 LatestSuccess 语义（5h 仍可返回）。
 func (s *Store) UsableLatestSuccess(authID string, provider string) (Record, bool) {
-	return s.pickLatestSuccess(authID, provider, true)
+	return s.pickLatestSuccess(authID, provider, false)
 }
 
 func (s *Store) pickLatestSuccess(authID string, provider string, skipCodexFiveHour bool) (Record, bool) {

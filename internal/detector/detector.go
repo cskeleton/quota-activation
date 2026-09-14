@@ -77,9 +77,9 @@ func shouldActivate(key CycleKey, cycle parsedCycle, previous PreviousState) (bo
 func parseCycle(input ProbeInput) (parsedCycle, error) {
 	switch input.Provider {
 	case ProviderCodex:
-		return parseCodex(input.Payload, input.ObservedAt)
+		return parseCodex(input.Payload, input.ObservedAt, input.Enable5hWindow)
 	case ProviderAntigravity:
-		return parseAntigravity(input.Payload, input.Model)
+		return parseAntigravity(input.Payload, input.Model, input.Enable5hWindow)
 	case ProviderUnknown:
 		return parsedCycle{}, fmt.Errorf("provider unknown: %w", ErrUnknownQuota)
 	default:

@@ -32,6 +32,7 @@ type Config struct {
 	ActivationPrompt         string
 	StatePath                string
 	EnableBeforeActivation   bool
+	Enable5hWindow           bool
 	// ActivationTransport 默认 direct_http；允许 scheduler_boost。
 	ActivationTransport ActivationTransport
 	// SchedulerBoostFallback：direct_http 遇传输/宿主类失败时是否回退 legacy scheduler_boost；默认 true。
@@ -67,6 +68,7 @@ type rawConfig struct {
 	ActivationPrompt         *string              `json:"activation_prompt"`
 	StatePath                *string              `json:"state_path"`
 	EnableBeforeActivation   *bool                `json:"enable_before_activation"`
+	Enable5hWindow           *bool                `json:"enable_5h_window"`
 	ActivationTransport      *string              `json:"activation_transport"`
 	SchedulerBoostFallback   *bool                `json:"scheduler_boost_fallback"`
 	ActivationModels         *rawActivationModels `json:"activation_models"`
@@ -181,6 +183,9 @@ func (raw rawConfig) apply(cfg Config) (Config, error) {
 	}
 	if raw.EnableBeforeActivation != nil {
 		cfg.EnableBeforeActivation = *raw.EnableBeforeActivation
+	}
+	if raw.Enable5hWindow != nil {
+		cfg.Enable5hWindow = *raw.Enable5hWindow
 	}
 	if raw.SchedulerBoostFallback != nil {
 		cfg.SchedulerBoostFallback = *raw.SchedulerBoostFallback
