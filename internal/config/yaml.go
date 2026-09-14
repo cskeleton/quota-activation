@@ -147,7 +147,7 @@ func yamlScalarForKey(key string, value string) any {
 		return yamlText(value)
 	case "max_concurrency", "priority":
 		return yamlScalar(value)
-	case "auto_activate", "enable_before_activation", "scheduler_boost_fallback", "enabled", "enable_gemini", "enable_claude_gpt":
+	case "auto_activate", "enable_before_activation", "enable_5h_window", "scheduler_boost_fallback", "enabled", "enable_gemini", "enable_claude_gpt":
 		return yamlScalar(value)
 	default:
 		text := yamlText(value)
